@@ -1,0 +1,4 @@
+enum Test {
+  a,
+  b,
+}

@@ -1,0 +1,15 @@
+targets:
+  $default:
+    builders:
+      dotenv_gen_runner|dotenv_gen:
+        enabled: true
+
+builders:
+  dotenv_gen:
+    target: ":dotenv_gen_runner"
+    import: "package:dotenv_gen_runner/dotenv_gen_runner.dart"
+    builder_factories: ["dotEnvGenAnnotation"]
+    build_extensions: {".dart": [".dotenv_gen.g.part"]}
+    auto_apply: dependents
+    build_to: cache
+    applies_builders: ["source_gen|combining_builder"]

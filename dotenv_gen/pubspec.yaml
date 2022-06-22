@@ -1,0 +1,11 @@
+name: dotenv_gen
+description: Generate environment variable dart files from an `.env` file.
+version: 0.0.1
+homepage: https://github.com/North101/dotenv_gen
+repository: https://github.com/North101/dotenv_gen
+
+environment:
+  sdk: ">=2.17.3 <3.0.0"
+
+dev_dependencies:
+  flutter_lints: ^2.0.0
