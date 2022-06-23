@@ -13,16 +13,23 @@ class DotEnvGenAnnotationGenerator extends GeneratorForAnnotation<DotEnvGen> {
   final logger = Logger('dotenv_gen_runner:dotenv_gen');
 
   @override
-  FutureOr<String> generateForAnnotatedElement(Element element, ConstantReader annotation, BuildStep buildStep) {
-    if (element is! ClassElement) throw Exception('@DotEnvGen annotation only supports classes');
+  FutureOr<String> generateForAnnotatedElement(
+      Element element, ConstantReader annotation, BuildStep buildStep) {
+    if (element is! ClassElement) {
+      throw Exception('@DotEnvGen annotation only supports classes');
+    }
 
-    final filenames = annotation.read('filenames').listValue.map((e) => e.toStringValue()!);
+    final filenames =
+        annotation.read('filenames').listValue.map((e) => e.toStringValue()!);
 
     final className = element.name;
     final hasValidConstructor = element.constructors.any((e) {
       return e.name == '_' && e.isConst && e.parameters.isEmpty;
     });
-    if (!hasValidConstructor) throw Exception('@DotEnvGen annotation requires a const $className._() constructor');
+    if (!hasValidConstructor) {
+      throw Exception(
+          '@DotEnvGen annotation requires a const $className._() constructor');
+    }
 
     final values = DotEnv()..load(filenames);
     final fields = [];
@@ -38,7 +45,7 @@ class DotEnvGenAnnotationGenerator extends GeneratorForAnnotation<DotEnvGen> {
         logger.warning(e.message);
       }
     }
-  
+
     return """
       class _\$$className extends $className {
         const _\$$className() : super._();

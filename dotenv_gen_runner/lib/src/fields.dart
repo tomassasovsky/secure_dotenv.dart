@@ -20,7 +20,8 @@ abstract class Field<T> {
     } else if (type.isEnum) {
       return EnumField(element, value);
     }
-    throw UnsupportedError('Unsupported type for ${element.enclosingElement.name}.$name: $type');
+    throw UnsupportedError(
+        'Unsupported type for ${element.enclosingElement.name}.$name: $type');
   }
 
   const Field(
@@ -60,7 +61,9 @@ abstract class Field<T> {
 
   String generate() {
     final value = valueAsString();
-    if (value == null && !isNullable) throw Exception('No env or default value found for: $name');
+    if (value == null && !isNullable) {
+      throw Exception('No env or default value found for: $name');
+    }
 
     return """
       @override
@@ -134,7 +137,8 @@ class EnumField extends Field<String> {
   );
 
   @override
-  String? parseValue() => envValue ?? defaultValue?.getField('_name')?.toStringValue();
+  String? parseValue() =>
+      envValue ?? defaultValue?.getField('_name')?.toStringValue();
 
   @override
   String? valueAsString() {
