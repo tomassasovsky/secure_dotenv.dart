@@ -40,12 +40,23 @@ part 'example.g.dart';
 
 @DotEnvGen()
 abstract class Env {
+  // factory to init the generated class
   const factory Env() = _$Env;
 
+  // an empty constructor is required
   const Env._();
 
+  // value is required
   String get name;
-  final int version = 1; // default value
+
+  // use default value if no value provided
+  final int version = 1;
+
+  // null if no value provided
+  String? get description;
+
+  // any functions etc will be inherited
+  void func() {}
 }
 ```
 
