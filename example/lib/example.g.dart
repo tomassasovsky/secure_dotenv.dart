@@ -15,10 +15,10 @@ class _$Env extends Env {
   final int version = 3;
 
   @override
-  final String name = 'test';
+  final e.Test? test = e.Test.a;
 
   @override
-  final e.Test? test2 = null;
+  final String name = 'test';
 
   @override
   final String blah = '2';

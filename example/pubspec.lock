@@ -140,14 +140,14 @@ packages:
       path: "../dotenv_gen"
       relative: true
     source: path
-    version: "0.0.1"
+    version: "0.0.2"
   dotenv_gen_runner:
     dependency: "direct dev"
     description:
       path: "../dotenv_gen_runner"
       relative: true
     source: path
-    version: "0.0.1"
+    version: "0.0.2"
   file:
     dependency: transitive
     description:

@@ -1,4 +1,3 @@
-import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
@@ -26,15 +25,14 @@ abstract class Field<T> {
 
   const Field(
     this.element,
-    this.envValue,
+    this.value,
   );
 
   final FieldElement element;
-  final String? envValue;
+  final String? value;
 
   String get name => element.name;
   DartType get type => element.type;
-  DartObject? get defaultValue => element.computeConstantValue();
 
   String? get typePrefix {
     final identifier = type.element?.library?.identifier;
@@ -62,7 +60,7 @@ abstract class Field<T> {
   String generate() {
     final value = valueAsString();
     if (value == null && !isNullable) {
-      throw Exception('No env or default value found for: $name');
+      throw Exception('No environment variable found for: $name');
     }
 
     return """
@@ -79,9 +77,7 @@ class StringField extends Field<String> {
   );
 
   @override
-  String? parseValue() {
-    return envValue ?? defaultValue?.toStringValue();
-  }
+  String? parseValue() => value;
 
   @override
   String? valueAsString() {
@@ -94,51 +90,74 @@ class StringField extends Field<String> {
 class IntField extends Field<int> {
   const IntField(
     super.element,
-    super.envValue,
+    super.value,
   );
 
   @override
   int? parseValue() {
-    if (envValue != null) return int.parse(envValue!);
-    return defaultValue?.toIntValue();
+    if (value == null) return null;
+    return int.parse(value!);
   }
 }
 
 class DoubleField extends Field<double> {
   const DoubleField(
     super.element,
-    super.envValue,
+    super.value,
   );
 
   @override
   double? parseValue() {
-    if (envValue != null) return double.parse(envValue!);
-    return defaultValue?.toDoubleValue();
+    if (value == null) return null;
+    return double.parse(value!);
   }
 }
 
 class BoolField extends Field<bool> {
   const BoolField(
     super.element,
-    super.envValue,
+    super.value,
   );
 
   @override
   bool? parseValue() {
-    if (envValue != null) return envValue?.toLowerCase() == 'true';
-    return defaultValue?.toBoolValue();
+    switch (value?.toLowerCase()) {
+      case null:
+        return null;
+      case 'true':
+      case '1':
+      case 'yes':
+        return true;
+      case 'false':
+      case '0':
+      case 'no':
+      case '':
+        return false;
+      default:
+        throw Exception('Invalid boolean value: $value');
+    }
   }
 }
 
 class EnumField extends Field<String> {
   const EnumField(
     super.element,
-    super.envValue,
+    super.value,
   );
 
   @override
-  String? parseValue() =>
-      envValue ?? defaultValue?.getField('_name')?.toStringValue();
+  String? parseValue() {
+    if (value == null) return null;
+
+    final values = (type as InterfaceType)
+        .accessors
+        .where((e) => e.returnType.isAssignableTo(type))
+        .map((e) => e.name);
+    if (!values.contains(value)) {
+      throw Exception('Invalid enum value for $type: $value');
+    }
+    return value;
+  }
 
   @override
   String? valueAsString() {

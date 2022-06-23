@@ -12,8 +12,8 @@ abstract class Env {
 
   String get name;
   final int version = 1;
-  e.Test? get test => e.Test.b;
-  e.Test? get test2;
+  final e.Test? test = e.Test.b;
+  final e.Test test2 = e.Test.b;
 
   String get blah => '1';
 
