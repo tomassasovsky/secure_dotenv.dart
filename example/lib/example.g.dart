@@ -18,7 +18,7 @@ class _$Env extends Env {
   final String name = 'test';
 
   @override
-  final e.Test test2 = e.Test.a;
+  final e.Test? test2 = null;
 
   @override
   final String blah = '2';

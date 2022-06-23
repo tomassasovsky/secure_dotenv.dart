@@ -13,7 +13,7 @@ abstract class Env {
   String get name;
   final int version = 1;
   e.Test? get test => e.Test.b;
-  e.Test get test2;
+  e.Test? get test2;
 
   String get blah => '1';
 

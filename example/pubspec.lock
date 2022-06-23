@@ -137,9 +137,9 @@ packages:
   dotenv_gen:
     dependency: "direct main"
     description:
-      name: dotenv_gen
-      url: "https://pub.dartlang.org"
-    source: hosted
+      path: "../dotenv_gen"
+      relative: true
+    source: path
     version: "0.0.1"
   dotenv_gen_runner:
     dependency: "direct dev"

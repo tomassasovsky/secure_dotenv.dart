@@ -15,4 +15,10 @@ dev_dependencies:
     path: ../dotenv_gen_runner
   flutter_lints: ^2.0.0
 
+dependency_overrides:
+  dotenv_gen:
+    path: ../dotenv_gen
+  dotenv_gen_runner:
+    path: ../dotenv_gen_runner
+
 flutter:
