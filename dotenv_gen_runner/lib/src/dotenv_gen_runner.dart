@@ -16,13 +16,15 @@ class DotEnvGenAnnotationGenerator extends GeneratorForAnnotation<DotEnvGen> {
   FutureOr<String> generateForAnnotatedElement(Element element, ConstantReader annotation, BuildStep buildStep) {
     if (element is! ClassElement) throw Exception('@DotEnvGen annotation only supports classes');
 
+    final filenames = annotation.read('filenames').listValue.map((e) => e.toStringValue()!);
+
     final className = element.name;
     final hasValidConstructor = element.constructors.any((e) {
       return e.name == '_' && e.isConst && e.parameters.isEmpty;
     });
     if (!hasValidConstructor) throw Exception('@DotEnvGen annotation requires a const $className._() constructor');
 
-    final values = DotEnv()..load();
+    final values = DotEnv()..load(filenames);
     final fields = [];
     for (final field in element.fields) {
       final value = values[field.name];
