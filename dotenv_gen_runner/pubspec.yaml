@@ -11,7 +11,7 @@ dependencies:
   analyzer: ^4.0.0
   build: ^2.0.0
   dotenv: ^4.0.0
-  dotenv_gen: ^0.0.1
+  dotenv_gen: ^0.0.2
   logging: ^1.0.0
   source_gen: ^1.0.0
   source_helper: ^1.0.0
