@@ -1,6 +1,6 @@
 name: dotenv_gen_runner
 description: Code generator for dotenv_gen
-version: 0.0.2
+version: 0.0.3
 homepage: https://github.com/North101/dotenv_gen
 repository: https://github.com/North101/dotenv_gen
 
