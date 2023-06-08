@@ -174,7 +174,7 @@ packages:
     description:
       path: dotenv_gen
       ref: HEAD
-      resolved-ref: "38af754e12988491bfd5a09ce5b2a545e0602632"
+      resolved-ref: "2a59c92fe3c7719a44038b390b0644dae9c3a624"
       url: "https://github.com/tomassasovsky/dotenv_gen.git"
     source: git
     version: "0.0.2"
