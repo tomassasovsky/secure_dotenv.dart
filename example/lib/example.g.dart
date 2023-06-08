@@ -15,9 +15,6 @@ class _$Env extends Env {
   final int version = 3;
 
   @override
-  final e.Test? test = e.Test.a;
-
-  @override
   final String name = 'test';
 
   @override

@@ -15,7 +15,7 @@ abstract class Env {
   final e.Test? test = e.Test.b;
   final e.Test test2 = e.Test.b;
 
-  String get blah => '1';
+  String get blah => '2';
 
   Function get a => () => {};
 
