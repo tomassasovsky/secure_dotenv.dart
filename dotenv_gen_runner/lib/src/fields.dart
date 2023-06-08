@@ -1,46 +1,47 @@
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
-import 'package:source_helper/source_helper.dart';
+
+import 'helpers.dart';
 
 abstract class Field<T> {
-  static Field of(FieldElement element, String? value) {
+  const Field(
+    this._element,
+    this.value,
+  );
+
+  static Field<T> of<T>(FieldElement element, String? value) {
     final name = element.name;
     final type = element.type;
 
     if (type.isDartCoreString) {
-      return StringField(element, value);
+      return StringField(element, value) as Field<T>;
     } else if (type.isDartCoreInt) {
-      return IntField(element, value);
+      return IntField(element, value) as Field<T>;
     } else if (type.isDartCoreDouble) {
-      return DoubleField(element, value);
+      return DoubleField(element, value) as Field<T>;
     } else if (type.isDartCoreBool) {
-      return BoolField(element, value);
-    } else if (type.isEnum) {
-      return EnumField(element, value);
+      return BoolField(element, value) as Field<T>;
+    } else if (type.isDartCoreEnum) {
+      return EnumField(element, value) as Field<T>;
     }
     throw UnsupportedError(
         'Unsupported type for ${element.enclosingElement.name}.$name: $type');
   }
 
-  const Field(
-    this.element,
-    this.value,
-  );
-
-  final FieldElement element;
+  final FieldElement _element;
   final String? value;
 
-  String get name => element.name;
-  DartType get type => element.type;
+  String get name => _element.name;
+  DartType get type => _element.type;
 
   String? get typePrefix {
     final identifier = type.element?.library?.identifier;
     if (identifier == null) return null;
 
-    for (final e in element.library.imports) {
+    for (final e in _element.library.libraryImports) {
       if (e.importedLibrary?.identifier != identifier) continue;
-      return e.prefix?.name;
+      return e.prefix?.element.name;
     }
     return null;
   }

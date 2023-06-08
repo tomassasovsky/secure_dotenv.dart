@@ -19,8 +19,7 @@ class DotEnvGenAnnotationGenerator extends GeneratorForAnnotation<DotEnvGen> {
       throw Exception('@DotEnvGen annotation only supports classes');
     }
 
-    final filenames =
-        annotation.read('filenames').listValue.map((e) => e.toStringValue()!);
+    final filename = annotation.read('filename').stringValue;
 
     final className = element.name;
     final hasValidConstructor = element.constructors.any((e) {
@@ -31,8 +30,8 @@ class DotEnvGenAnnotationGenerator extends GeneratorForAnnotation<DotEnvGen> {
           '@DotEnvGen annotation requires a const $className._() constructor');
     }
 
-    final values = DotEnv()..load(filenames);
-    final fields = [];
+    final values = DotEnv()..load([filename]);
+    final fields = <Field<dynamic>>[];
     for (final field in element.fields) {
       final value = values[field.name];
       final isAbstract = field.isAbstract || field.getter?.isAbstract == true;

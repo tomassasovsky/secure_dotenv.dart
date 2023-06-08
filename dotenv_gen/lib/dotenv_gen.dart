@@ -2,8 +2,8 @@ library dotenv_gen;
 
 class DotEnvGen {
   const DotEnvGen({
-    this.filenames = const ['.env'],
+    this.filename = '.env',
   });
 
-  final List<String> filenames;
+  final String filename;
 }
