@@ -1,4 +1,8 @@
+import 'package:analyzer/dart/constant/value.dart';
+import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
+import 'package:dotenv_gen/dotenv_gen.dart';
+import 'package:source_gen/source_gen.dart';
 
 /// Returns a quoted String literal for [value] that can be used in generated
 /// Dart code.
@@ -93,3 +97,24 @@ String _getHexLiteral(String input) {
 final _escapeRegExp = RegExp('[\$\'"\\x00-\\x07\\x0E-\\x1F$_escapeMapRegexp]');
 
 final _escapeMapRegexp = _escapeMap.keys.map(_getHexLiteral).join();
+final _fieldKeyChecker = const TypeChecker.fromRuntime(FieldKey);
+
+class FieldInfo {
+  FieldInfo(
+    this.name,
+    this.defaultValue,
+  );
+
+  final String? name;
+  final DartObject? defaultValue;
+}
+
+FieldInfo? getFieldAnnotation(Element element) {
+  var obj = _fieldKeyChecker.firstAnnotationOfExact(element);
+  if (obj == null) return null;
+
+  return FieldInfo(
+    obj.getField('name')?.toStringValue(),
+    obj.getField('defaultValue'),
+  );
+}

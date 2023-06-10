@@ -1,38 +1,72 @@
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
-
-import 'helpers.dart';
+import 'package:dotenv/dotenv.dart';
+import 'package:dotenv_gen/dotenv_gen.dart';
+import 'package:source_helper/source_helper.dart';
 
 abstract class Field<T> {
   const Field(
     this._element,
+    this.jsonKey,
     this.value,
   );
 
-  static Field<T> of<T>(FieldElement element, String? value) {
-    final name = element.name;
+  static Field<dynamic> of({
+    required FieldElement element,
+    required FieldRename rename,
+    required String? nameOverride,
+    DotEnv? values,
+  }) {
+    assert(
+      nameOverride == null || rename == FieldRename.none,
+      'Cannot use both nameOverride and rename',
+    );
+
+    final key = element.name;
     final type = element.type;
+    String jsonKey;
+
+    switch (rename) {
+      case FieldRename.none:
+        jsonKey = key;
+        break;
+      case FieldRename.pascal:
+        jsonKey = key.pascal;
+        break;
+      case FieldRename.snake:
+        jsonKey = key.snake;
+        break;
+      case FieldRename.kebab:
+        jsonKey = key.kebab;
+        break;
+      case FieldRename.screamingSnake:
+        jsonKey = key.snake.toUpperCase();
+        break;
+    }
+
+    jsonKey = nameOverride ?? jsonKey;
+    final value = values?[jsonKey];
 
     if (type.isDartCoreString) {
-      return StringField(element, value) as Field<T>;
+      return StringField(element, jsonKey, value);
     } else if (type.isDartCoreInt) {
-      return IntField(element, value) as Field<T>;
+      return IntField(element, jsonKey, value);
     } else if (type.isDartCoreDouble) {
-      return DoubleField(element, value) as Field<T>;
+      return DoubleField(element, jsonKey, value);
     } else if (type.isDartCoreBool) {
-      return BoolField(element, value) as Field<T>;
+      return BoolField(element, jsonKey, value);
     } else if (type.isDartCoreEnum) {
-      return EnumField(element, value) as Field<T>;
+      return EnumField(element, jsonKey, value);
     }
     throw UnsupportedError(
-        'Unsupported type for ${element.enclosingElement.name}.$name: $type');
+        'Unsupported type for ${element.enclosingElement.name}.$jsonKey: $type');
   }
 
   final FieldElement _element;
+  final String jsonKey;
   final String? value;
 
-  String get name => _element.name;
   DartType get type => _element.type;
 
   String? get typePrefix {
@@ -61,19 +95,29 @@ abstract class Field<T> {
   String generate() {
     final value = valueAsString();
     if (value == null && !isNullable) {
-      throw Exception('No environment variable found for: $name');
+      throw Exception('No environment variable found for: $jsonKey');
     }
 
     return """
       @override
-      final ${typeWithPrefix(withNullability: true)} $name = $value;
+      ${typeWithPrefix(withNullability: true)} get ${_element.name} => _get('$jsonKey');
     """;
+  }
+
+  MapEntry<String, String> generateMapEntry() {
+    final value = valueAsString();
+    if (value == null && !isNullable) {
+      throw Exception('No environment variable found for: $jsonKey');
+    }
+
+    return MapEntry(jsonKey, value!);
   }
 }
 
 class StringField extends Field<String> {
   const StringField(
     super.element,
+    super.name,
     super.value,
   );
 
@@ -82,15 +126,14 @@ class StringField extends Field<String> {
 
   @override
   String? valueAsString() {
-    final value = parseValue();
-    if (value == null) return null;
-    return escapeDartString(value);
+    return parseValue();
   }
 }
 
 class IntField extends Field<int> {
   const IntField(
     super.element,
+    super.name,
     super.value,
   );
 
@@ -104,6 +147,7 @@ class IntField extends Field<int> {
 class DoubleField extends Field<double> {
   const DoubleField(
     super.element,
+    super.name,
     super.value,
   );
 
@@ -117,6 +161,7 @@ class DoubleField extends Field<double> {
 class BoolField extends Field<bool> {
   const BoolField(
     super.element,
+    super.name,
     super.value,
   );
 
@@ -143,6 +188,7 @@ class BoolField extends Field<bool> {
 class EnumField extends Field<String> {
   const EnumField(
     super.element,
+    super.name,
     super.value,
   );
 
