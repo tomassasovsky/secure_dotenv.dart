@@ -1,4 +1,4 @@
-library dotenv_gen;
+library secure_dotenv;
 
 export 'package:encrypt/encrypt.dart' show AESMode, Key, Encrypter, IV, AES;
 export 'dart:convert' show json, base64;

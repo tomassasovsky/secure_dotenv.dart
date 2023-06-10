@@ -1,0 +1,15 @@
+targets:
+  $default:
+    builders:
+      secure_dotenv_generator|secure_dotenv:
+        enabled: true
+
+builders:
+  secure_dotenv:
+    target: ":secure_dotenv_generator"
+    import: "package:secure_dotenv_generator/secure_dotenv_generator.dart"
+    builder_factories: ["secureDotEnvAnnotation"]
+    build_extensions: { ".dart": [".secure_dotenv.g.part"] }
+    auto_apply: dependents
+    build_to: cache
+    applies_builders: ["source_gen|combining_builder"]

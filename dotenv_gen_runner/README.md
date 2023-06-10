@@ -1,1 +1,0 @@
-The code generator for [dotenv_gen](https://pub.dev/packages/dotenv_gen)

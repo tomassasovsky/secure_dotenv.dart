@@ -1,4 +1,4 @@
-part of dotenv_gen;
+part of secure_dotenv;
 
 class FieldKey {
   const FieldKey({
@@ -7,5 +7,5 @@ class FieldKey {
   });
 
   final String? name;
-  final dynamic defaultValue;
+  final Object? defaultValue;
 }

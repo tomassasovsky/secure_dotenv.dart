@@ -185,15 +185,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.1.0"
-  dotenv_gen:
-    dependency: "direct main"
-    description:
-      path: dotenv_gen
-      ref: HEAD
-      resolved-ref: f6edf9c1c5bb798617072a19364a9c0696d9a2dd
-      url: "https://github.com/tomassasovsky/dotenv_gen.git"
-    source: git
-    version: "0.0.2"
   encrypt:
     dependency: "direct main"
     description:
@@ -386,6 +377,13 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.2.3"
+  secure_dotenv:
+    dependency: "direct main"
+    description:
+      path: "../secure_dotenv"
+      relative: true
+    source: path
+    version: "0.1.0"
   shelf:
     dependency: transitive
     description:

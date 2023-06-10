@@ -1,23 +1,24 @@
-import 'package:dotenv_gen/dotenv_gen.dart';
+import 'package:secure_dotenv/secure_dotenv.dart';
 
 import 'enum.dart' as e;
 
 part 'example.g.dart';
 
-@DotEnvGen()
+@DotEnvGen(fieldRename: FieldRename.none)
 abstract class Env {
-  const factory Env() = _$Env;
+  const factory Env(String encryptionKey) = _$Env;
 
   const Env._();
 
   String get name;
-  final int version = 1;
-  final e.Test? test = e.Test.b;
-  final e.Test test2 = e.Test.b;
+
+  @FieldKey(defaultValue: 1)
+  int get version;
+
+  e.Test? get test;
+
+  @FieldKey(name: 'TEST_2', defaultValue: e.Test.b)
+  e.Test get test2;
 
   String get blah => '2';
-
-  Function get a => () => {};
-
-  void b() {}
 }
