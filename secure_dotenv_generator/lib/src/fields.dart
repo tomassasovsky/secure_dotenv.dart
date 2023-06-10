@@ -1,9 +1,13 @@
+import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:dotenv/dotenv.dart';
-import 'package:dotenv_gen/dotenv_gen.dart';
+import 'package:secure_dotenv/secure_dotenv.dart';
+import 'package:source_gen/source_gen.dart';
 import 'package:source_helper/source_helper.dart';
+
+final _fieldKeyChecker = const TypeChecker.fromRuntime(FieldKey);
 
 abstract class Field<T> {
   const Field(
@@ -16,6 +20,7 @@ abstract class Field<T> {
     required FieldElement element,
     required FieldRename rename,
     required String? nameOverride,
+    DartObject? defaultValue,
     DotEnv? values,
   }) {
     assert(
@@ -23,8 +28,33 @@ abstract class Field<T> {
       'Cannot use both nameOverride and rename',
     );
 
-    final key = element.name;
     final type = element.type;
+    final jsonKey = getElementJsonKey(element, rename, nameOverride);
+    final value = values?[jsonKey] ?? defaultValue?.toStringValue();
+
+    if (type.isDartCoreString) {
+      return StringField(element, jsonKey, value);
+    } else if (type.isDartCoreInt) {
+      return IntField(element, jsonKey, value);
+    } else if (type.isDartCoreDouble) {
+      return DoubleField(element, jsonKey, value);
+    } else if (type.isDartCoreBool) {
+      return BoolField(element, jsonKey, value);
+    } else if (type.isEnum) {
+      final name = defaultValue?.getField('_name')?.toStringValue();
+      return EnumField(element, jsonKey, value ?? name);
+    }
+
+    throw UnsupportedError(
+        'Unsupported type for ${element.enclosingElement.name}.$jsonKey: $type');
+  }
+
+  static String getElementJsonKey(
+    FieldElement element,
+    FieldRename rename,
+    String? nameOverride,
+  ) {
+    final key = element.name;
     String jsonKey;
 
     switch (rename) {
@@ -45,22 +75,7 @@ abstract class Field<T> {
         break;
     }
 
-    jsonKey = nameOverride ?? jsonKey;
-    final value = values?[jsonKey];
-
-    if (type.isDartCoreString) {
-      return StringField(element, jsonKey, value);
-    } else if (type.isDartCoreInt) {
-      return IntField(element, jsonKey, value);
-    } else if (type.isDartCoreDouble) {
-      return DoubleField(element, jsonKey, value);
-    } else if (type.isDartCoreBool) {
-      return BoolField(element, jsonKey, value);
-    } else if (type.isDartCoreEnum) {
-      return EnumField(element, jsonKey, value);
-    }
-    throw UnsupportedError(
-        'Unsupported type for ${element.enclosingElement.name}.$jsonKey: $type');
+    return nameOverride ?? jsonKey;
   }
 
   final FieldElement _element;
@@ -203,7 +218,24 @@ class EnumField extends Field<String> {
     if (!values.contains(value)) {
       throw Exception('Invalid enum value for $type: $value');
     }
-    return value;
+
+    return values.firstWhere((e) => e == value!.split('.').last);
+  }
+
+  @override
+  String generate() {
+    final value = parseValue();
+    if (value == null && !isNullable) {
+      throw Exception('No environment variable found for: $jsonKey');
+    }
+
+    return """
+      @override
+      ${typeWithPrefix(withNullability: true)} get ${_element.name} => _get(
+        '$jsonKey',
+        fromString: ${typeWithPrefix(withNullability: false)}.values.byName,
+      );
+    """;
   }
 
   @override
@@ -212,4 +244,24 @@ class EnumField extends Field<String> {
     if (value == null) return null;
     return '${typeWithPrefix(withNullability: false)}.$value';
   }
+}
+
+class FieldInfo {
+  FieldInfo(
+    this.name,
+    this.defaultValue,
+  );
+
+  final String? name;
+  final DartObject? defaultValue;
+}
+
+FieldInfo? getFieldAnnotation(Element element) {
+  var obj = _fieldKeyChecker.firstAnnotationOfExact(element);
+  if (obj == null) return null;
+
+  return FieldInfo(
+    obj.getField('name')?.toStringValue(),
+    obj.getField('defaultValue'),
+  );
 }

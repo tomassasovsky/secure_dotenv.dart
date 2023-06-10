@@ -1,0 +1,1 @@
+The code generator for [secure_dotenv](https://pub.dev/packages/secure_dotenv)

@@ -1,4 +1,4 @@
-part of dotenv_gen;
+part of secure_dotenv;
 
 /// Values for the automatic field renaming behavior for [DotEnvGen].
 enum FieldRename {

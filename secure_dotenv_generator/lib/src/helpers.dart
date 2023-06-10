@@ -1,8 +1,7 @@
-import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
-import 'package:dotenv_gen/dotenv_gen.dart';
-import 'package:source_gen/source_gen.dart';
+import 'package:secure_dotenv_generator/src/environment_field.dart';
+import 'package:secure_dotenv_generator/src/fields.dart';
 
 /// Returns a quoted String literal for [value] that can be used in generated
 /// Dart code.
@@ -97,24 +96,70 @@ String _getHexLiteral(String input) {
 final _escapeRegExp = RegExp('[\$\'"\\x00-\\x07\\x0E-\\x1F$_escapeMapRegexp]');
 
 final _escapeMapRegexp = _escapeMap.keys.map(_getHexLiteral).join();
-final _fieldKeyChecker = const TypeChecker.fromRuntime(FieldKey);
-
-class FieldInfo {
-  FieldInfo(
-    this.name,
-    this.defaultValue,
+InterfaceElement getInterface(Element element) {
+  assert(
+    element.kind == ElementKind.CLASS || element.kind == ElementKind.ENUM,
+    'Only classes or enums are allowed to be annotated with @HiveType.',
   );
 
-  final String? name;
-  final DartObject? defaultValue;
+  return element as InterfaceElement;
 }
 
-FieldInfo? getFieldAnnotation(Element element) {
-  var obj = _fieldKeyChecker.firstAnnotationOfExact(element);
-  if (obj == null) return null;
+Set<String> getAllAccessorNames(InterfaceElement interface) {
+  var accessorNames = <String>{};
 
-  return FieldInfo(
-    obj.getField('name')?.toStringValue(),
-    obj.getField('defaultValue'),
-  );
+  var supertypes = interface.allSupertypes.map((it) => it.element);
+  for (var type in [interface, ...supertypes]) {
+    for (var accessor in type.accessors) {
+      if (accessor.isSetter) {
+        var name = accessor.name;
+        accessorNames.add(name.substring(0, name.length - 1));
+      } else {
+        accessorNames.add(accessor.name);
+      }
+    }
+  }
+
+  return accessorNames;
+}
+
+List<EnvironmentField> getAccessors(
+    InterfaceElement interface, LibraryElement library) {
+  var accessorNames = getAllAccessorNames(interface);
+
+  var getters = <EnvironmentField>[];
+  var setters = <EnvironmentField>[];
+  for (var name in accessorNames) {
+    var getter = interface.lookUpGetter(name, library);
+    if (getter != null) {
+      var getterAnn =
+          getFieldAnnotation(getter.variable) ?? getFieldAnnotation(getter);
+      if (getterAnn != null) {
+        var field = getter.variable;
+        getters.add(EnvironmentField(
+          field.name,
+          getterAnn.name,
+          field.type,
+          getterAnn.defaultValue,
+        ));
+      }
+    }
+
+    var setter = interface.lookUpSetter('$name=', library);
+    if (setter != null) {
+      var setterAnn =
+          getFieldAnnotation(setter.variable) ?? getFieldAnnotation(setter);
+      if (setterAnn != null) {
+        var field = setter.variable;
+        setters.add(EnvironmentField(
+          field.name,
+          setterAnn.name,
+          field.type,
+          setterAnn.defaultValue,
+        ));
+      }
+    }
+  }
+
+  return [...getters, ...setters];
 }

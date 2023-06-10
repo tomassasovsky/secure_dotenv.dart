@@ -1,1 +1,1 @@
-./dotenv_gen/README.md
+./secure_dotenv/README.md
