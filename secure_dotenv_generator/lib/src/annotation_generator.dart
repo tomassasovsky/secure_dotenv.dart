@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
@@ -88,12 +89,29 @@ class SecureDotEnvAnnotationGenerator
       }
     }
 
-    final encryptionKey = options.config['ENCRYPTION_KEY'] as String?;
-    final isEncrypted = encryptionKey?.isNotEmpty ?? false;
+    var encryptionKey = options.config['ENCRYPTION_KEY'] as String?;
+    var initializationVector = options.config['IV'] as String?;
+    final outputFile = options.config['OUTPUT_FILE'] as String?;
+
+    final isEncrypted = ((encryptionKey?.isNotEmpty ?? false) &&
+            (initializationVector?.isNotEmpty ?? false)) ||
+        (outputFile?.isNotEmpty ?? false);
 
     if (isEncrypted) {
-      final key = Key.fromBase64(encryptionKey!.trim());
-      final iv = IV.fromLength(16);
+      Key key;
+      IV iv;
+
+      if (encryptionKey == null || initializationVector == null) {
+        key = Key.fromSecureRandom(32);
+        iv = IV.fromSecureRandom(16);
+      } else if (outputFile == null) {
+        throw Exception(
+            "Output file must be provided when encryptionKey and initializationVector are present.");
+      } else {
+        key = Key.fromBase64(encryptionKey.trim());
+        iv = IV.fromBase64(initializationVector.trim());
+      }
+
       final encrypter = Encrypter(AES(key, mode: encryptionType));
 
       final List<MapEntry<String, dynamic>> entries = [];
@@ -151,7 +169,7 @@ class SecureDotEnvAnnotationGenerator
           }
 
           final encryptionKey = Key.fromBase64(_encryptionKey.trim());
-          final iv = IV.fromLength(16);
+          final iv = IV.fromBase64(_iv.trim());
           final encrypter = Encrypter(
             AES(encryptionKey, mode: AESMode.cbc),
           );
@@ -169,15 +187,24 @@ class SecureDotEnvAnnotationGenerator
 
       buffer.writeln("""
       class _\$$className extends $className {
-        const _\$$className(this._encryptionKey) : super.${constructor.name}();
+        const _\$$className(this._encryptionKey, this._iv) : super.${constructor.name}();
 
         final String _encryptionKey;
+        final String _iv;
         $encryptedValues
         $values
 
         $tGet
       }
     """);
+
+      if (outputFile != null) {
+        final file = File(outputFile);
+        final secretsMap = <String, String>{};
+        secretsMap['ENCRYPTION_KEY'] = key.base64;
+        secretsMap['IV'] = iv.base64;
+        file.writeAsStringSync(jsonEncode(secretsMap));
+      }
 
       return buffer.toString();
     } else {

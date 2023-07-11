@@ -1,6 +1,6 @@
 name: secure_dotenv_generator
 description: Code generator for secure_dotenv
-version: 0.1.1
+version: 0.2.1
 homepage: https://github.com/tomassasovsky/secure_dotenv.dart.git
 repository: https://github.com/tomassasovsky/secure_dotenv.dart.git
 

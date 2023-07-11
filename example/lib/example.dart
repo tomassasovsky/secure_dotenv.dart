@@ -6,7 +6,7 @@ part 'example.g.dart';
 
 @DotEnvGen(fieldRename: FieldRename.none)
 abstract class Env {
-  const factory Env(String encryptionKey) = _$Env;
+  const factory Env(String encryptionKey, String iv) = _$Env;
 
   const Env._();
 

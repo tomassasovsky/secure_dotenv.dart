@@ -9,11 +9,12 @@ part of 'example.dart';
 // **************************************************************************
 
 class _$Env extends Env {
-  const _$Env(this._encryptionKey) : super._();
+  const _$Env(this._encryptionKey, this._iv) : super._();
 
   final String _encryptionKey;
+  final String _iv;
   static const String _encryptedValues =
-      '2M+2zini7cxKJjb+KJ6N9s0iiLvCx3D2RRq2ZRC1nb3n+7TcfXsG0AAFKVzpVzKtAJa45Mwgcsb2gZqwd5GLklyKLz3Cljh/idTGnbSPyOFhcu8LiJVqTVwbVRWXbifu/XFWcTNkqooZBiChXrKyzQ6r7WEO7ta+C1++JaZ7fiyvZkp8D7+AdXubs1FmpYyni1GF3LymYswl7XTmNcjXY2AzRRze4RZUDQaduJztkSNPQlMUe98qVLAnWokVw+I9';
+      'irwMKyUsm1UrEECc5sQCR4aoyrCXQB21iNCO5nJ3yN4GG+JZigooOGDge7rrX3WywelEpnyudyr1YkLCSRpY/9DOCjHWwP5COOnTZSopfK6DKKo6YeHCs0bBGBYb1X3NhP++HihL5XmJeighbmeYKsFpDLdVS7YKwcu/tR2mBaq1hWaaQNEYldNIibPxIF0ojdj2cQNg+IavyeR6GQ/A2Q+jXAonVPWzfcU9ScjgP+uX865hImFn98MaPE3xrfKo';
   @override
   String get name => _get('name');
 
@@ -60,7 +61,7 @@ class _$Env extends Env {
     }
 
     final encryptionKey = Key.fromBase64(_encryptionKey.trim());
-    final iv = IV.fromLength(16);
+    final iv = IV.fromBase64(_iv.trim());
     final encrypter = Encrypter(
       AES(encryptionKey, mode: AESMode.cbc),
     );
