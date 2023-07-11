@@ -8,17 +8,17 @@ environment:
 
 dependencies:
   secure_dotenv:
-    path: ../secure_dotenv
+    # path: ../secure_dotenv
 
 dev_dependencies:
   build_runner: ^2.4.5
   secure_dotenv_generator:
-    path: ../secure_dotenv_generator
+    # path: ../secure_dotenv_generator
   flutter_lints: ^2.0.1
   test: ^1.24.3
 
-dependency_overrides:
-  secure_dotenv_generator:
-    path: ../secure_dotenv_generator
+# dependency_overrides:
+#   secure_dotenv_generator:
+#     path: ../secure_dotenv_generator
 
 flutter:
