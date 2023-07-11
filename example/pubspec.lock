@@ -389,10 +389,10 @@ packages:
     dependency: "direct dev"
     description:
       name: secure_dotenv_generator
-      sha256: c282f51f65f726985bdfdb3284607e85116259a1651682ab6d40880af28ebb36
+      sha256: "2e88764c1e463748ab885d57ad0ec2356930de1b38f2e7d2df864c8e63222627"
       url: "https://pub.dev"
     source: hosted
-    version: "0.1.0"
+    version: "0.2.0"
   shelf:
     dependency: transitive
     description:

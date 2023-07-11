@@ -6,7 +6,6 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 import 'package:collection/collection.dart';
 import 'package:dotenv/dotenv.dart';
-import 'package:encrypt/encrypt.dart';
 import 'package:logging/logging.dart';
 import 'package:secure_dotenv/secure_dotenv.dart';
 import 'package:secure_dotenv_generator/src/helpers.dart';
@@ -98,19 +97,21 @@ class SecureDotEnvAnnotationGenerator
             (initializationVector?.isNotEmpty ?? false)) ||
         (outputFile?.isNotEmpty ?? false);
 
-    if (encryptionKey == null || initializationVector == null) {
-      encryptionKey = SecureRandom(32).base64.substring(0, 32);
-      initializationVector = SecureRandom(16).base64.substring(0, 16);
-
-      logger.info('Generated encryption key and initialization vector...');
-    } else if (outputFile == null) {
-      throw Exception(
-          "Output file must be provided when encryptionKey and initializationVector are present.");
-    }
-
     if (isEncrypted) {
-      final key = Key.fromBase64(encryptionKey.trim());
-      final iv = IV.fromBase64(initializationVector.trim());
+      Key key;
+      IV iv;
+
+      if (encryptionKey == null || initializationVector == null) {
+        key = Key.fromSecureRandom(32);
+        iv = IV.fromSecureRandom(16);
+      } else if (outputFile == null) {
+        throw Exception(
+            "Output file must be provided when encryptionKey and initializationVector are present.");
+      } else {
+        key = Key.fromBase64(encryptionKey.trim());
+        iv = IV.fromBase64(initializationVector.trim());
+      }
+
       final encrypter = Encrypter(AES(key, mode: encryptionType));
 
       final List<MapEntry<String, dynamic>> entries = [];
@@ -200,8 +201,8 @@ class SecureDotEnvAnnotationGenerator
       if (outputFile != null) {
         final file = File(outputFile);
         final secretsMap = <String, String>{};
-        secretsMap['ENCRYPTION_KEY'] = encryptionKey;
-        secretsMap['IV'] = initializationVector;
+        secretsMap['ENCRYPTION_KEY'] = key.base64;
+        secretsMap['IV'] = iv.base64;
         file.writeAsStringSync(jsonEncode(secretsMap));
       }
 
