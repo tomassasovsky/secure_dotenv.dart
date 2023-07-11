@@ -102,7 +102,7 @@ class SecureDotEnvAnnotationGenerator
         final value = field.parseValue();
 
         // encrypt value and save with key
-        if (value == null) {
+        if (value == null || value is String && value.isEmpty) {
           entries.add(MapEntry(key, null));
           continue;
         }

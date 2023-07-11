@@ -380,16 +380,18 @@ packages:
   secure_dotenv:
     dependency: "direct main"
     description:
-      path: "../secure_dotenv"
-      relative: true
-    source: path
+      name: secure_dotenv
+      sha256: a544725e7ce5768caf31b6ac8edfefdac59a4c7dd6fc7ef55694a971e8e8d298
+      url: "https://pub.dev"
+    source: hosted
     version: "0.1.0"
   secure_dotenv_generator:
     dependency: "direct dev"
     description:
-      path: "../secure_dotenv_generator"
-      relative: true
-    source: path
+      name: secure_dotenv_generator
+      sha256: c282f51f65f726985bdfdb3284607e85116259a1651682ab6d40880af28ebb36
+      url: "https://pub.dev"
+    source: hosted
     version: "0.1.0"
   shelf:
     dependency: transitive
