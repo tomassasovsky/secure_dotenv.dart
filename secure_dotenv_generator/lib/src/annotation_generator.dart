@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
@@ -38,10 +39,16 @@ class SecureDotEnvAnnotationGenerator
     }
 
     final filename = annotation.read('filename').stringValue;
+
     final encryptionTypeName =
         annotation.read('encryptionType').revive().accessor.split('.')[1];
     final encryptionType =
         AESMode.values.firstWhere((v) => v.name == encryptionTypeName);
+
+    final paddingName =
+        annotation.read('padding').revive().accessor.split('.')[1];
+    final padding =
+        PaddingEncoding.values.firstWhere((v) => v.name == paddingName);
 
     final fieldRenameName =
         annotation.read('fieldRename').revive().accessor.split('.')[1];
@@ -98,21 +105,21 @@ class SecureDotEnvAnnotationGenerator
         (outputFile?.isNotEmpty ?? false);
 
     if (isEncrypted) {
-      Key key;
-      IV iv;
+      CipherKey key;
+      CipherIV iv;
 
       if (encryptionKey == null || initializationVector == null) {
-        key = Key.fromSecureRandom(32);
-        iv = IV.fromSecureRandom(16);
+        key = CipherKey.fromRandom(32);
+        iv = CipherIV.fromRandom(16);
       } else if (outputFile == null) {
         throw Exception(
             "Output file must be provided when encryptionKey and initializationVector are present.");
       } else {
-        key = Key.fromBase64(encryptionKey.trim());
-        iv = IV.fromBase64(initializationVector.trim());
+        key = CipherKey.fromUTF8(encryptionKey.trim());
+        iv = CipherIV.fromUTF8(initializationVector.trim());
       }
 
-      final encrypter = Encrypter(AES(key, mode: encryptionType));
+      final encrypter = AES(key: key, mode: encryptionType, padding: padding);
 
       final List<MapEntry<String, dynamic>> entries = [];
       for (final field in fields) {
@@ -125,12 +132,18 @@ class SecureDotEnvAnnotationGenerator
           continue;
         }
 
-        final encrypted = encrypter.encrypt(value.toString(), iv: iv);
+        final encrypted = encrypter.encrypt(
+          CryptoBytes(Uint8List.fromList(value.toString().codeUnits)),
+          iv: iv,
+        );
         entries.add(MapEntry(key, encrypted.base64));
       }
 
       final jsonEncoded = jsonEncode(Map.fromEntries(entries));
-      final encryptedJson = encrypter.encrypt(jsonEncoded, iv: iv);
+      final encryptedJson = encrypter.encrypt(
+        CryptoBytes(Uint8List.fromList(jsonEncoded.codeUnits)),
+        iv: iv,
+      );
       final encryptedBase64 = encryptedJson.base64;
 
       String encryptedValues;
@@ -168,20 +181,29 @@ class SecureDotEnvAnnotationGenerator
             throw Exception('Type \${T.toString()} not supported');
           }
 
-          final encryptionKey = Key.fromBase64(_encryptionKey.trim());
-          final iv = IV.fromBase64(_iv.trim());
-          final encrypter = Encrypter(
-            AES(encryptionKey, mode: AESMode.cbc),
+          final encryptionKey = CipherKey.fromBase64(_encryptionKey);
+          final iv = CipherIV.fromBase64(_iv);
+          final encrypter = AES(
+            key: encryptionKey,
+            mode: AESMode.$encryptionTypeName,
+            padding: PaddingEncoding.$paddingName,
           );
-          final decrypted = encrypter.decrypt64(_encryptedValues, iv: iv);
-          final jsonMap = json.decode(decrypted) as Map<String, dynamic>;
+          final decrypted = encrypter.decrypt(
+            CryptoBytes.fromBase64(_encryptedValues),
+            iv: iv,
+          );
+          final decryptedString = decrypted.toString();
+          final jsonMap = json.decode(decryptedString) as Map<String, dynamic>;
           if (!jsonMap.containsKey(key)) {
             throw Exception('Key \$key not found in .env file');
           }
 
           final encryptedValue = jsonMap[key] as String;
-          final decryptedValue = encrypter.decrypt64(encryptedValue, iv: iv);
-          return _parseValue(decryptedValue);
+          final decryptedValue = encrypter.decrypt(
+            CryptoBytes.fromBase64(encryptedValue),
+            iv: iv,
+          );
+          return _parseValue(decryptedValue.toString());
         }
         """;
 
@@ -206,7 +228,10 @@ class SecureDotEnvAnnotationGenerator
         file.writeAsStringSync(jsonEncode(secretsMap));
       }
 
-      return buffer.toString();
+      final out = buffer.toString();
+      logger.info('Generated encrypted values for $className');
+
+      return out;
     } else {
       final List<MapEntry<String, dynamic>> entries = [];
       for (final field in fields) {
