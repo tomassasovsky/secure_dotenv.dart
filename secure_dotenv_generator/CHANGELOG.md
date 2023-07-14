@@ -1,3 +1,11 @@
+## 0.3.0
+
+* chore(deps-dev): bump all
+
+## 0.2.2
+
+* fix: invalid or corrupted pad block
+
 ## 0.2.1
 
 * fix: iv encryption fixed

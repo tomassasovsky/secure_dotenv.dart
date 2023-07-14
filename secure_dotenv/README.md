@@ -81,10 +81,18 @@ abstract class Env {
 NOTE: Encryption keys must be 128, 192, or 256 bits long. If you want to encrypt sensitive values, you can run the following command:
 
 ```shell
-$ dart run build_runner build --define secure_dotenv_generator:secure_dotenv=ENCRYPTION_KEY=encryption_key
+$ dart run build_runner build --define secure_dotenv_generator:secure_dotenv=ENCRYPTION_KEY=encryption_key  --define secure_dotenv_generator:secure_dotenv=IV=your_iv
 ```
 
-where `encryption_key` is the encryption key you want to use to encrypt sensitive values. If you don't want to encrypt sensitive values, you can run the following command instead:
+where `encryption_key` is the encryption key you want to use to encrypt sensitive values and `your_iv` is the initialization vector.
+
+You can also ask secure_dotenv to generate these automatically and output them into a file:
+
+```shell
+$ dart run build_runner build --define secure_dotenv_generator:secure_dotenv=OUTPUT_FILE=encryption_key.json
+```
+
+If you don't want to encrypt sensitive values, you can run the following command instead:
 
 ```shell
 $ dart run build_runner build

@@ -102,19 +102,21 @@ class SecureDotEnvAnnotationGenerator
       IV iv;
 
       if (encryptionKey == null || initializationVector == null) {
+        // generate key and iv if not provided
         key = Key.fromSecureRandom(32);
         iv = IV.fromSecureRandom(16);
       } else if (outputFile == null) {
         throw Exception(
             "Output file must be provided when encryptionKey and initializationVector are present.");
       } else {
-        key = Key.fromBase64(encryptionKey.trim());
-        iv = IV.fromBase64(initializationVector.trim());
+        key = Key.fromBase64(encryptionKey);
+        iv = IV.fromBase64(initializationVector);
       }
 
-      final encrypter = Encrypter(AES(key, mode: encryptionType));
-
+      final encrypter =
+          Encrypter(AES(key, mode: encryptionType));
       final List<MapEntry<String, dynamic>> entries = [];
+
       for (final field in fields) {
         final key = field.jsonKey;
         final value = field.parseValue();
@@ -168,11 +170,9 @@ class SecureDotEnvAnnotationGenerator
             throw Exception('Type \${T.toString()} not supported');
           }
 
-          final encryptionKey = Key.fromBase64(_encryptionKey.trim());
-          final iv = IV.fromBase64(_iv.trim());
-          final encrypter = Encrypter(
-            AES(encryptionKey, mode: AESMode.cbc),
-          );
+          final encryptionKey = Key.fromBase64(_encryptionKey);
+          final iv = IV.fromBase64(_iv);
+          final encrypter = Encrypter(AES(encryptionKey, mode: AESMode.$encryptionTypeName));
           final decrypted = encrypter.decrypt64(_encryptedValues, iv: iv);
           final jsonMap = json.decode(decrypted) as Map<String, dynamic>;
           if (!jsonMap.containsKey(key)) {

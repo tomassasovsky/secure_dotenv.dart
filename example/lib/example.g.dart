@@ -14,7 +14,7 @@ class _$Env extends Env {
   final String _encryptionKey;
   final String _iv;
   static const String _encryptedValues =
-      'irwMKyUsm1UrEECc5sQCR4aoyrCXQB21iNCO5nJ3yN4GG+JZigooOGDge7rrX3WywelEpnyudyr1YkLCSRpY/9DOCjHWwP5COOnTZSopfK6DKKo6YeHCs0bBGBYb1X3NhP++HihL5XmJeighbmeYKsFpDLdVS7YKwcu/tR2mBaq1hWaaQNEYldNIibPxIF0ojdj2cQNg+IavyeR6GQ/A2Q+jXAonVPWzfcU9ScjgP+uX865hImFn98MaPE3xrfKo';
+      '0om2vfezPjXNpZQdG9WAf/4enlnm+ksn6bYe0lHZbtZLnrEOrK9EcBcTcGQvheCDR4oLzFkpKysbdJNRsPkayeahqXa8rkvn1jYhbFvIrMCEXhqglNUaZyDmbgSeqPvtJHmkvO4/Ayc6gvWaM/EmfcBwqTBGWOSGMA4PWGivyS/FB8KufCah9ldAamSlmRaa2zDu/Q2jI1G/WH4n5qqvE1WWWI7xCZWdoR/KPv0JtwGnzL5N1OcXzdvhsboY960z';
   @override
   String get name => _get('name');
 
@@ -60,11 +60,9 @@ class _$Env extends Env {
       throw Exception('Type ${T.toString()} not supported');
     }
 
-    final encryptionKey = Key.fromBase64(_encryptionKey.trim());
-    final iv = IV.fromBase64(_iv.trim());
-    final encrypter = Encrypter(
-      AES(encryptionKey, mode: AESMode.cbc),
-    );
+    final encryptionKey = Key.fromBase64(_encryptionKey);
+    final iv = IV.fromBase64(_iv);
+    final encrypter = Encrypter(AES(encryptionKey, mode: AESMode.cbc));
     final decrypted = encrypter.decrypt64(_encryptedValues, iv: iv);
     final jsonMap = json.decode(decrypted) as Map<String, dynamic>;
     if (!jsonMap.containsKey(key)) {
