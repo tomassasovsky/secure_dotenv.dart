@@ -46,6 +46,8 @@ To generate Dart classes from a `.env` file using the `secure_dotenv` package, f
 ```dart
 import 'package:secure_dotenv/secure_dotenv.dart';
 import 'enum.dart' as e;
+
+part 'example.g.dart';
 ```
 
 2. Define the environment class and annotate it with `@DotEnvGen`:
@@ -53,7 +55,6 @@ import 'enum.dart' as e;
 ```dart
 @DotEnvGen(
   filename: '.env',
-  encryptionType: AESMode.cbc,
   fieldRename: FieldRename.screamingSnake,
 )
 abstract class Env {
@@ -81,10 +82,18 @@ abstract class Env {
 NOTE: Encryption keys must be 128, 192, or 256 bits long. If you want to encrypt sensitive values, you can run the following command:
 
 ```shell
-$ dart run build_runner build --define secure_dotenv_generator:secure_dotenv=ENCRYPTION_KEY=encryption_key
+$ dart run build_runner build --define secure_dotenv_generator:secure_dotenv=ENCRYPTION_KEY=encryption_key  --define secure_dotenv_generator:secure_dotenv=IV=your_iv
 ```
 
-where `encryption_key` is the encryption key you want to use to encrypt sensitive values. If you don't want to encrypt sensitive values, you can run the following command instead:
+where `encryption_key` is the encryption key you want to use to encrypt sensitive values and `your_iv` is the initialization vector.
+
+You can also ask secure_dotenv to generate these automatically and output them into a file:
+
+```shell
+$ dart run build_runner build --define secure_dotenv_generator:secure_dotenv=OUTPUT_FILE=encryption_key.json
+```
+
+If you don't want to encrypt sensitive values, you can run the following command instead:
 
 ```shell
 $ dart run build_runner build
@@ -112,7 +121,6 @@ void main() {
 The `@DotEnvGen` annotation configures the behavior of the code generation process. It has the following parameters:
 
 - `filename` (optional): Specifies the name of the `.env` file. Default value is `.env`.
-- `encryptionType` (optional): Specifies the encryption type to use for encrypting sensitive values. Default value is `AESMode.cbc`.
 - `fieldRename` (optional): Specifies the automatic field renaming behavior. Default value is `FieldRename.screamingSnake`.
 
 ### FieldKey
@@ -151,8 +159,7 @@ class _$Env extends Env {
   const _$Env(this._encryptionKey) : super._();
 
   final String _encryptionKey;
-  static const String _encryptedValues =
-      '2M+2zini7cxKJjb+KJ6N9s0iiLvCx3D2RRq2ZRC1nb3n+7TcfXsG0AAFKVzpVzKtAJa45Mwgcsb2gZqwd5GLklyKLz3Cljh/idTGnbSPyOFhcu8LiJVqTVwbVRWXbifuBLxtiRRZyD9F8aMS69R0OvWIr1Ja9ofPXpEKGPs+RTRLm6qjsL2T1U6Brbj2vxF/RPNa9mfblOF0BuZlTwKURiFCYOEauL42x4VXECyQ7AU=';
+  static final Uint8List _encryptedValues = Uint8List.fromList([81, 83,...]);
   @override
   String get name => _get('name');
 
@@ -214,6 +221,7 @@ This setup will ensure that the encrypted value is correctly decrypted and conve
 - The `secure_dotenv` package relies on the `build_runner` tool to generate the required code. Therefore, you need to run `dart run build_runner build` whenever changes are made to the environment class or the `.env` file.
 - It is important to keep the encryption key secure and never commit it to version control or expose it in any way.
 - The package currently supports encryption using the Advanced Encryption Standard (AES) algorithm in Cipher Block Chaining (CBC) mode. Other encryption algorithms and modes may be supported in the future.
+- Because we started using pointycastle now we only support CBC for now, but we will add support for other modes in the future. If you need another mode, please open an issue.
 
 ## Conclusion
 
