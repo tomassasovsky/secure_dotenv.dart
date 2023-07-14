@@ -1,10 +1,9 @@
 import 'package:secure_dotenv/secure_dotenv.dart';
-
 import 'enum.dart' as e;
 
 part 'example.g.dart';
 
-@DotEnvGen(fieldRename: FieldRename.none)
+@DotEnvGen(fieldRename: FieldRename.screamingSnake)
 abstract class Env {
   const factory Env(String encryptionKey, String iv) = _$Env;
 

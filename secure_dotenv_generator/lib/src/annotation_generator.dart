@@ -23,7 +23,10 @@ class SecureDotEnvAnnotationGenerator
 
   @override
   FutureOr<String> generateForAnnotatedElement(
-      Element element, ConstantReader annotation, BuildStep buildStep) async {
+    Element element,
+    ConstantReader annotation,
+    BuildStep buildStep,
+  ) async {
     if (element is! ClassElement) {
       throw Exception('@DotEnvGen annotation only supports classes');
     }
@@ -38,10 +41,6 @@ class SecureDotEnvAnnotationGenerator
     }
 
     final filename = annotation.read('filename').stringValue;
-    final encryptionTypeName =
-        annotation.read('encryptionType').revive().accessor.split('.')[1];
-    final encryptionType =
-        AESMode.values.firstWhere((v) => v.name == encryptionTypeName);
 
     final fieldRenameName =
         annotation.read('fieldRename').revive().accessor.split('.')[1];
@@ -98,49 +97,49 @@ class SecureDotEnvAnnotationGenerator
         (outputFile?.isNotEmpty ?? false);
 
     if (isEncrypted) {
-      Key key;
-      IV iv;
+      Uint8List key;
+      Uint8List iv;
 
       if (encryptionKey == null || initializationVector == null) {
-        key = Key.fromSecureRandom(32);
-        iv = IV.fromSecureRandom(16);
+        key = AESCBCEncryper.generateRandomBytes(32);
+        iv = AESCBCEncryper.generateRandomBytes(16);
       } else if (outputFile == null) {
         throw Exception(
-            "Output file must be provided when encryptionKey and initializationVector are present.");
+          "Output file must be provided when encryptionKey and initializationVector are present.",
+        );
       } else {
-        key = Key.fromBase64(encryptionKey.trim());
-        iv = IV.fromBase64(initializationVector.trim());
+        key = base64.decode(encryptionKey.trim());
+        iv = base64.decode(initializationVector.trim());
       }
-
-      final encrypter = Encrypter(AES(key, mode: encryptionType));
 
       final List<MapEntry<String, dynamic>> entries = [];
       for (final field in fields) {
-        final key = field.jsonKey;
+        final fieldKey = field.jsonKey;
         final value = field.parseValue();
 
         // encrypt value and save with key
         if (value == null || value is String && value.isEmpty) {
-          entries.add(MapEntry(key, null));
+          entries.add(MapEntry(fieldKey, null));
           continue;
         }
 
-        final encrypted = encrypter.encrypt(value.toString(), iv: iv);
-        entries.add(MapEntry(key, encrypted.base64));
+        final encrypted = base64.encode(
+          AESCBCEncryper.aesCbcEncrypt(key, iv, value.toString()),
+        );
+        entries.add(MapEntry(fieldKey, encrypted));
       }
 
       final jsonEncoded = jsonEncode(Map.fromEntries(entries));
-      final encryptedJson = encrypter.encrypt(jsonEncoded, iv: iv);
-      final encryptedBase64 = encryptedJson.base64;
-
+      final encryptedJson = AESCBCEncryper.aesCbcEncrypt(
+        key,
+        iv,
+        jsonEncoded,
+      );
       String encryptedValues;
-      if (encryptedBase64.contains("'")) {
-        encryptedValues =
-            'static const String _encryptedValues = "$encryptedBase64";';
-      } else {
-        encryptedValues =
-            "static const String _encryptedValues = '$encryptedBase64';";
-      }
+
+      encryptedValues =
+          'static final Uint8List _encryptedValues = Uint8List.fromList($encryptedJson);';
+
       final values = fields.map((e) => e.generate()).join('\n');
       final buffer = StringBuffer();
       final tGet = """
@@ -168,19 +167,20 @@ class SecureDotEnvAnnotationGenerator
             throw Exception('Type \${T.toString()} not supported');
           }
 
-          final encryptionKey = Key.fromBase64(_encryptionKey.trim());
-          final iv = IV.fromBase64(_iv.trim());
-          final encrypter = Encrypter(
-            AES(encryptionKey, mode: AESMode.cbc),
-          );
-          final decrypted = encrypter.decrypt64(_encryptedValues, iv: iv);
+          final encryptionKey = base64.decode(_encryptionKey.trim());
+          final iv = base64.decode(_iv.trim());
+          final decrypted = AESCBCEncryper.aesCbcDecrypt(encryptionKey, iv, _encryptedValues);
           final jsonMap = json.decode(decrypted) as Map<String, dynamic>;
           if (!jsonMap.containsKey(key)) {
             throw Exception('Key \$key not found in .env file');
           }
 
           final encryptedValue = jsonMap[key] as String;
-          final decryptedValue = encrypter.decrypt64(encryptedValue, iv: iv);
+          final decryptedValue = AESCBCEncryper.aesCbcDecrypt(
+            encryptionKey,
+            iv,
+            base64.decode(encryptedValue),
+          );
           return _parseValue(decryptedValue);
         }
         """;
@@ -201,8 +201,8 @@ class SecureDotEnvAnnotationGenerator
       if (outputFile != null) {
         final file = File(outputFile);
         final secretsMap = <String, String>{};
-        secretsMap['ENCRYPTION_KEY'] = key.base64;
-        secretsMap['IV'] = iv.base64;
+        secretsMap['ENCRYPTION_KEY'] = base64.encode(key);
+        secretsMap['IV'] = base64.encode(iv);
         file.writeAsStringSync(jsonEncode(secretsMap));
       }
 

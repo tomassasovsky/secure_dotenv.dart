@@ -1,3 +1,7 @@
+## 1.0.0
+
+* Updated to pointycastle
+
 ## 0.2.1
 
 * fix: iv encryption fixed
