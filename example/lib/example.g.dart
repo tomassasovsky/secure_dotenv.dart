@@ -14,7 +14,7 @@ class _$Env extends Env {
   final String _encryptionKey;
   final String _iv;
   static const String _encryptedValues =
-      'irwMKyUsm1UrEECc5sQCR4aoyrCXQB21iNCO5nJ3yN4GG+JZigooOGDge7rrX3WywelEpnyudyr1YkLCSRpY/9DOCjHWwP5COOnTZSopfK6DKKo6YeHCs0bBGBYb1X3NhP++HihL5XmJeighbmeYKsFpDLdVS7YKwcu/tR2mBaq1hWaaQNEYldNIibPxIF0ojdj2cQNg+IavyeR6GQ/A2Q+jXAonVPWzfcU9ScjgP+uX865hImFn98MaPE3xrfKo';
+      '49qGqrfRB5DsyT7jA5lobtH4DP5ZFYGs6RSPIt83tmslaFIQRG3qEQHaoyarrNzjpiVSbwY04zG+BH8FzwroZjisVPsWHFMrxpbeKlpekuz10/VeCmBkNHBoq2TJp+CMfouyd/B3PzaVhM4p5cMV9Uq2sEUgnMMtwsnFqaN8M+2IjfUJ1mMwhb99vFl1IxrmahackvCgfAQvHAMpjjBxbIZybjPtTrk9ifhhZQ2+GTr8Jc7dvS5LuQcRrfuEvtb3';
   @override
   String get name => _get('name');
 
@@ -60,19 +60,28 @@ class _$Env extends Env {
       throw Exception('Type ${T.toString()} not supported');
     }
 
-    final encryptionKey = Key.fromBase64(_encryptionKey.trim());
-    final iv = IV.fromBase64(_iv.trim());
-    final encrypter = Encrypter(
-      AES(encryptionKey, mode: AESMode.cbc),
+    final encryptionKey = CipherKey.fromBase64(_encryptionKey);
+    final iv = CipherIV.fromBase64(_iv);
+    final encrypter = AES(
+      key: encryptionKey,
+      mode: AESMode.cbc,
+      padding: PaddingEncoding.pkcs7,
     );
-    final decrypted = encrypter.decrypt64(_encryptedValues, iv: iv);
-    final jsonMap = json.decode(decrypted) as Map<String, dynamic>;
+    final decrypted = encrypter.decrypt(
+      CryptoBytes.fromBase64(_encryptedValues),
+      iv: iv,
+    );
+    final decryptedString = decrypted.toString();
+    final jsonMap = json.decode(decryptedString) as Map<String, dynamic>;
     if (!jsonMap.containsKey(key)) {
       throw Exception('Key $key not found in .env file');
     }
 
     final encryptedValue = jsonMap[key] as String;
-    final decryptedValue = encrypter.decrypt64(encryptedValue, iv: iv);
-    return _parseValue(decryptedValue);
+    final decryptedValue = encrypter.decrypt(
+      CryptoBytes.fromBase64(encryptedValue),
+      iv: iv,
+    );
+    return _parseValue(decryptedValue.toString());
   }
 }
