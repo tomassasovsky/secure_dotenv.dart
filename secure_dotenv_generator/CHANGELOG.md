@@ -1,3 +1,8 @@
+## 1.0.1
+
+* fix: multi environment apps
+  Previously the key generated for each environment was overriden by the next one. Now the key is generated and persisted accross environments.
+
 ## 1.0.0
 
 * Updated to pointycastle
