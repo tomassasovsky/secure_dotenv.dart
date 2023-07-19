@@ -17,9 +17,11 @@ final logger = Logger('secure_dotenv_generator:secure_dotenv');
 
 class SecureDotEnvAnnotationGenerator
     extends GeneratorForAnnotation<DotEnvGen> {
-  const SecureDotEnvAnnotationGenerator(this.options);
+  SecureDotEnvAnnotationGenerator(this.options);
 
   final BuilderOptions options;
+  Uint8List? _cachedKey;
+  Uint8List? _cachedIv;
 
   @override
   FutureOr<String> generateForAnnotatedElement(
@@ -97,19 +99,21 @@ class SecureDotEnvAnnotationGenerator
         (outputFile?.isNotEmpty ?? false);
 
     if (isEncrypted) {
-      Uint8List key;
-      Uint8List iv;
-
-      if (encryptionKey == null || initializationVector == null) {
-        key = AESCBCEncryper.generateRandomBytes(32);
-        iv = AESCBCEncryper.generateRandomBytes(16);
-      } else if (outputFile == null) {
-        throw Exception(
-          "Output file must be provided when encryptionKey and initializationVector are present.",
-        );
+      if (_cachedIv == null && _cachedKey == null) {
+        logger.info('Cached key and iv not found, generating new ones');
+        if (encryptionKey == null || initializationVector == null) {
+          _cachedKey = AESCBCEncryper.generateRandomBytes(32);
+          _cachedIv = AESCBCEncryper.generateRandomBytes(16);
+        } else if (outputFile == null) {
+          throw Exception(
+            "Output file must be provided when encryptionKey and initializationVector are present.",
+          );
+        } else {
+          _cachedKey = base64.decode(encryptionKey.trim());
+          _cachedIv = base64.decode(initializationVector.trim());
+        }
       } else {
-        key = base64.decode(encryptionKey.trim());
-        iv = base64.decode(initializationVector.trim());
+        logger.info('Cached key and iv found, using them');
       }
 
       final List<MapEntry<String, dynamic>> entries = [];
@@ -124,15 +128,16 @@ class SecureDotEnvAnnotationGenerator
         }
 
         final encrypted = base64.encode(
-          AESCBCEncryper.aesCbcEncrypt(key, iv, value.toString()),
+          AESCBCEncryper.aesCbcEncrypt(
+              _cachedKey!, _cachedIv!, value.toString()),
         );
         entries.add(MapEntry(fieldKey, encrypted));
       }
 
       final jsonEncoded = jsonEncode(Map.fromEntries(entries));
       final encryptedJson = AESCBCEncryper.aesCbcEncrypt(
-        key,
-        iv,
+        _cachedKey!,
+        _cachedIv!,
         jsonEncoded,
       );
       String encryptedValues;
@@ -201,8 +206,8 @@ class SecureDotEnvAnnotationGenerator
       if (outputFile != null) {
         final file = File(outputFile);
         final secretsMap = <String, String>{};
-        secretsMap['ENCRYPTION_KEY'] = base64.encode(key);
-        secretsMap['IV'] = base64.encode(iv);
+        secretsMap['ENCRYPTION_KEY'] = base64.encode(_cachedKey!);
+        secretsMap['IV'] = base64.encode(_cachedIv!);
         file.writeAsStringSync(jsonEncode(secretsMap));
       }
 

@@ -359,14 +359,14 @@ packages:
       path: "../secure_dotenv"
       relative: true
     source: path
-    version: "0.1.0"
+    version: "1.0.0"
   secure_dotenv_generator:
     dependency: "direct dev"
     description:
       path: "../secure_dotenv_generator"
       relative: true
     source: path
-    version: "0.1.0"
+    version: "1.0.0"
   shelf:
     dependency: transitive
     description:

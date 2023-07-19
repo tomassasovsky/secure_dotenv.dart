@@ -3,7 +3,7 @@ import 'enum.dart' as e;
 
 part 'example.g.dart';
 
-@DotEnvGen(fieldRename: FieldRename.screamingSnake)
+@DotEnvGen(fieldRename: FieldRename.none)
 abstract class Env {
   const factory Env(String encryptionKey, String iv) = _$Env;
 
